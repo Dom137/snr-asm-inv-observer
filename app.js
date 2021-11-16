@@ -242,9 +242,10 @@ async function syncAsm(invEntries) {
     console.log(getCurrentDate() + ' Synching inventory data with ASM...');
     try {
       for (const [key, value] of Object.entries(entitiesInAsm)) {
+        console.log(key);
         let presentInInventory = invEntries[key];
         if (!presentInInventory) {
-          console.log(getCurrentDate() + ' Element <' + key + '> is not present in inventory...');
+          console.log(getCurrentDate() + ' Element <' + key + '> is not present in inventory..');
           let asmElementInternalId = entitiesInAsm[key];
           if (asmElementInternalId) deleteFromAsm(key, asmElementInternalId);
         }
