@@ -241,14 +241,22 @@ async function syncAsm(invEntries) {
   return new Promise(function (resolve, reject) {
     console.log(getCurrentDate() + ' Synching inventory data with ASM...');
     try {
-      Object.keys(entitiesInAsm).forEach(function (key) {
+      for (const [key, value] of Object.entries(entitiesInAsm)) {
         let presentInInventory = invEntries[key];
         if (!presentInInventory) {
           console.log(getCurrentDate() + ' Element <' + key + '> is not present in inventory...');
           let asmElementInternalId = entitiesInAsm[key];
           if (asmElementInternalId) deleteFromAsm(key, asmElementInternalId);
         }
-      });
+      }
+      // Object.keys(entitiesInAsm).forEach(function (key) {
+      //   let presentInInventory = invEntries[key];
+      //   if (!presentInInventory) {
+      //     console.log(getCurrentDate() + ' Element <' + key + '> is not present in inventory...');
+      //     let asmElementInternalId = entitiesInAsm[key];
+      //     if (asmElementInternalId) deleteFromAsm(key, asmElementInternalId);
+      //   }
+      // });
       resolve();
     } catch (err) {
       console.log(getCurrentDate() + ' Caught an exception while synchronizing inventory data with ASM!');
