@@ -147,23 +147,23 @@ const token = Buffer.from(`${ASM_USER}:${ASM_PASS}`, 'utf8').toString('base64');
 /***************** END CONFIGURATION *******************/
 
 //schedule a periodic run
-cron.schedule(process.env.SCHEDULE || '* * * * *', () => {
-  console.log(getCurrentDate() + '  Looking for new data in inventory database...');
-  console.log(`Collecting current ressources from ASM, using filter on type <${ASM_ENTITY_TYPE}>`);
-  getFromAsm()
-    .then((data) => {
-      entitiesInAsm = data;
-      collectInventoryData();
-    })
-    .catch((err) => console.log(err));
-});
+// cron.schedule(process.env.SCHEDULE || '* * * * *', () => {
+//   console.log(getCurrentDate() + '  Looking for new data in inventory database...');
+//   console.log(`Collecting current ressources from ASM, using filter on type <${ASM_ENTITY_TYPE}>`);
+//   getFromAsm()
+//     .then((data) => {
+//       entitiesInAsm = data;
+//       collectInventoryData();
+//     })
+//     .catch((err) => console.log(err));
+// });
 
-// getFromAsm()
-//   .then((data) => {
-//     entitiesInAsm = data;
-//     collectInventoryData();
-//   })
-//   .catch((err) => console.log(err));
+getFromAsm()
+  .then((data) => {
+    entitiesInAsm = data;
+    collectInventoryData();
+  })
+  .catch((err) => console.log(err));
 
 async function collectInventoryData() {
   console.log(getCurrentDate() + ` Looking for new data using query <${INV_DB_QUERY_SQL}>`);
@@ -244,6 +244,7 @@ async function syncAsm(invEntries) {
       Object.keys(entitiesInAsm).forEach(function (key) {
         let presentInInventory = invEntries[key];
         if (!presentInInventory) {
+          console.log(getCurrentDate() + ' Element <' + key + '> is not present in inventory...');
           let asmElementInternalId = entitiesInAsm[key];
           if (asmElementInternalId) deleteFromAsm(key, asmElementInternalId);
         }
