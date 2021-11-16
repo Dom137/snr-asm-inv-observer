@@ -356,8 +356,8 @@ async function sendToAsm(entries) {
 }
 
 async function deleteFromAsm(uniqueId, asmInternalId) {
-  if (uniqueId) {
-    console.log(getCurrentDate() + ` Deleting ressource with uniqueId <${uniqueId}> from ASM...`);
+  if (uniqueId && typeof uniqueId != 'undefined') {
+    console.log(getCurrentDate() + ` About to delete ressource with uniqueId <${uniqueId}> from ASM...`);
     const uri = encodeURI(ASM_BASE_URL + ASM_EP_RES + '/' + uniqueId);
     axios
       .delete(uri, {
