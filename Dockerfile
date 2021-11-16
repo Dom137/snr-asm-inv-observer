@@ -19,8 +19,8 @@ WORKDIR /node
 COPY ./ .
 
 RUN yum -y install oracle-nodejs-release-el7 oracle-instantclient-release-el7 && \
-    yum-config-manager --disable ol7_developer_nodejs14 && \
-    yum-config-manager --enable ol7_developer_nodejs12 && \
+    yum-config-manager --disable ol7_developer_nodejs12 && \
+    yum-config-manager --enable ol7_developer_nodejs14 && \
     yum -y install nodejs node-oracledb-node12 && \
     rm -rf /var/cache/yum/* &&  npm install 
 
