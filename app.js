@@ -245,7 +245,7 @@ async function syncAsm(invEntries) {
         let presentInInventory = invEntries[key];
         if (!presentInInventory) {
           let asmElementInternalId = entitiesInAsm[key];
-          deleteFromAsm(key, asmElementInternalId);
+          if (asmElementInternalId) deleteFromAsm(key, asmElementInternalId);
         }
       });
       resolve();
