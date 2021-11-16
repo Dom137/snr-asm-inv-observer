@@ -356,60 +356,64 @@ async function sendToAsm(entries) {
 }
 
 async function deleteFromAsm(uniqueId, asmInternalId) {
-  console.log(getCurrentDate() + ` Deleting ressource with uniqueId <${uniqueId}> from ASM...`);
-  const uri = encodeURI(ASM_BASE_URL + ASM_EP_RES + '/' + uniqueId);
-  axios
-    .delete(uri, {
-      headers: {
-        Authorization: `Basic ${token}`,
-        'X-TenantID': ASM_TENANT_ID,
-        JobId: ASM_EP_JOB_ID,
-      },
-    })
-    .then((response) => {
-      if (response && response.status && response.status < 400) {
-        console.log(getCurrentDate() + ` Done deleting ressource with uniqueId <${uniqueId}> from ASM...`);
-        if (ASM_EP_RES_DEL_IMMEDIATE === true) {
-          // the previous delete is async, we need to wait a moment until we finally delete the elemet for good
-          console.log(getCurrentDate() + ' Waiting for ressource to be gone...');
-          setTimeout(function () {
-            console.debug(
-              getCurrentDate() +
-                ` Deleting ressource with name <${uniqueId}> for good, using uniqueID <${asmInternalId}>`
-            );
-            const uri = encodeURI(ASM_TOPO_URL + ASM_EP_RES + '/' + asmInternalId + ASM_EP_RES_DEL_IMMEDIATE_PARAM);
-            axios
-              .delete(uri, {
-                headers: {
-                  Authorization: `Basic ${token}`,
-                  'X-TenantID': ASM_TENANT_ID,
-                },
-              })
-              .then((response) => {
-                if (response && response.status && response.status < 400) {
-                  console.debug(getCurrentDate() + ` Successfully deleted ressource with name: ${uniqueId}. for good.`);
-                  console.log('----------------------');
-                } else {
-                  console.error(getCurrentDate() + ` Error deleting ressource with name: ${uniqueId} immediately`);
-                }
-              })
-              .catch((error) => {
-                let message = getCurrentDate() + ` Error deleting ressource with name: ${uniqueId} for good.`;
-                //   console.log(error);
-                if (error && error.response && error.response.data && error.response.data.message) {
-                  message += getCurrentDate() + `  Message from API: ${error.response.data.message}`;
-                }
-                console.error(message);
-              });
-          }, ASM_EP_DEL_WAIT_TIME_MS);
+  if (uniqueId) {
+    console.log(getCurrentDate() + ` Deleting ressource with uniqueId <${uniqueId}> from ASM...`);
+    const uri = encodeURI(ASM_BASE_URL + ASM_EP_RES + '/' + uniqueId);
+    axios
+      .delete(uri, {
+        headers: {
+          Authorization: `Basic ${token}`,
+          'X-TenantID': ASM_TENANT_ID,
+          JobId: ASM_EP_JOB_ID,
+        },
+      })
+      .then((response) => {
+        if (response && response.status && response.status < 400) {
+          console.log(getCurrentDate() + ` Done deleting ressource with uniqueId <${uniqueId}> from ASM...`);
+          if (ASM_EP_RES_DEL_IMMEDIATE === true) {
+            // the previous delete is async, we need to wait a moment until we finally delete the elemet for good
+            console.log(getCurrentDate() + ' Waiting for ressource to be gone...');
+            setTimeout(function () {
+              console.debug(
+                getCurrentDate() +
+                  ` Deleting ressource with name <${uniqueId}> for good, using uniqueID <${asmInternalId}>`
+              );
+              const uri = encodeURI(ASM_TOPO_URL + ASM_EP_RES + '/' + asmInternalId + ASM_EP_RES_DEL_IMMEDIATE_PARAM);
+              axios
+                .delete(uri, {
+                  headers: {
+                    Authorization: `Basic ${token}`,
+                    'X-TenantID': ASM_TENANT_ID,
+                  },
+                })
+                .then((response) => {
+                  if (response && response.status && response.status < 400) {
+                    console.debug(
+                      getCurrentDate() + ` Successfully deleted ressource with name: ${uniqueId}. for good.`
+                    );
+                    console.log('----------------------');
+                  } else {
+                    console.error(getCurrentDate() + ` Error deleting ressource with name: ${uniqueId} immediately`);
+                  }
+                })
+                .catch((error) => {
+                  let message = getCurrentDate() + ` Error deleting ressource with name: ${uniqueId} for good.`;
+                  //   console.log(error);
+                  if (error && error.response && error.response.data && error.response.data.message) {
+                    message += getCurrentDate() + `  Message from API: ${error.response.data.message}`;
+                  }
+                  console.error(message);
+                });
+            }, ASM_EP_DEL_WAIT_TIME_MS);
+          }
+        } else {
+          console.error(getCurrentDate() + ` Error deleting ressource with name: ${uniqueId}. Response code gt 400`);
         }
-      } else {
-        console.error(getCurrentDate() + ` Error deleting ressource with name: ${uniqueId}. Response code gt 400`);
-      }
-    })
-    .catch((error) => {
-      const message = getCurrentDate() + ` Error deleting ressource with name: ${uniqueId}`;
-      console.error(message);
-      console.log(error);
-    });
+      })
+      .catch((error) => {
+        const message = getCurrentDate() + ` Error deleting ressource with name: ${uniqueId}`;
+        console.error(message);
+        console.log(error);
+      });
+  }
 }
