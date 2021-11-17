@@ -153,6 +153,7 @@ cron.schedule(process.env.SCHEDULE || '* * * * *', () => {
   getFromAsm()
     .then((data) => {
       entitiesInAsm = data;
+      console.log(entitiesInAsm);
       collectInventoryData();
     })
     .catch((err) => console.log(err));
@@ -345,7 +346,7 @@ async function sendToAsm(entries) {
           (response) => {
             if (response.status && response.status >= 400) {
               console.log(
-                getCurrentDate() + ` Received an error response qhile create a ressource in ASM. Ressource: ${ele.ip}`
+                getCurrentDate() + ` Received an error response while create a ressource in ASM. Ressource: ${ele.ip}`
               );
             }
           },
