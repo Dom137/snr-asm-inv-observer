@@ -293,7 +293,7 @@ async function getFromAsm() {
                 }
                 console.log(
                   getCurrentDate() +
-                    ` Done collecting current data from ASM. Found  ${response.data._items.length} items.`
+                    ` Done collecting current data from ASM. Found ${response.data._items.length} items.`
                 );
                 resolve(asmEntries);
               }
