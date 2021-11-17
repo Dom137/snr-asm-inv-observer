@@ -291,7 +291,10 @@ async function getFromAsm() {
                 for (let asmEle of response.data._items) {
                   asmEntries[asmEle.uniqueId] = asmEle._id;
                 }
-                console.log(getCurrentDate() + ' Done collecting current data from ASM...');
+                console.log(
+                  getCurrentDate() +
+                    ` Done collecting current data from ASM. Found  ${response.data._items.length} items.`
+                );
                 resolve(asmEntries);
               }
             }
