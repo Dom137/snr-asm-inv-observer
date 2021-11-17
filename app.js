@@ -18,7 +18,7 @@ let entitiesInAsm = {};
 
 /******************* CONFIGURATION *******************/
 oracledb.outFormat = oracledb.OUT_FORMAT_OBJECT;
-console.log(getCurrentDate() + 'Starting inventory collector...');
+console.log(getCurrentDate() + ' Starting inventory collector...');
 
 let INV_DB_QUERY_FIELDS = process.env.INV_DB_QUERY_FIELDS;
 if (!INV_DB_QUERY_FIELDS) {
