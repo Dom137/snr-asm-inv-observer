@@ -153,7 +153,6 @@ cron.schedule(process.env.SCHEDULE || '* * * * *', () => {
   getFromAsm()
     .then((data) => {
       entitiesInAsm = data;
-      console.log(entitiesInAsm);
       collectInventoryData();
     })
     .catch((err) => console.log(err));
