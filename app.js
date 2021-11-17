@@ -264,7 +264,7 @@ async function syncAsm(invEntries) {
       console.error(err);
       reject(
         getCurrentDate() +
-          'An Exception occurred while synchronizing inventory data with ASM. Please see previous error messages.'
+          'An Exception occurred while synchronizing inventory data with ASM. Please see previous error message(s).'
       );
     }
   });
