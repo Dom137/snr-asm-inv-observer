@@ -171,27 +171,31 @@ const token = Buffer.from(`${ASM_USER}:${ASM_PASS}`, 'utf8').toString('base64');
 /***************** END CONFIGURATION *******************/
 
 //schedule a periodic run
-// cron.schedule(process.env.SCHEDULE || '*/30 * * * *', () => {
-//   console.log(getCurrentDate() + '  Looking for new data in inventory database...');
-//   console.log(getCurrentDate() + ` Collecting current ressources from ASM, using filter on type <${ASM_ENTITY_TYPE}>`);
-//   getFromAsm()
-//     .then((data) => {
-//       entitiesInAsm = data;
-//       collectInventoryData();
-//     })
-//     .catch((err) => console.log(err));
-// });
+cron.schedule(process.env.SCHEDULE || '*/30 * * * *', () => {
+  console.log(getCurrentDate() + '  Looking for new data in inventory database...');
+  console.log(getCurrentDate() + ` Collecting current ressources from ASM, using filter on type <${ASM_ENTITY_TYPE}>`);
+  getAsmRessourceCount()
+    .then((cnt) => {
+      getFromAsm(cnt)
+        .then((data) => {
+          entitiesInAsm = data;
+          collectInventoryData();
+        })
+        .catch((err) => console.log(err));
+    })
+    .catch((err) => console.log(err));
+});
 
-getAsmRessourceCount()
-  .then((cnt) => {
-    getFromAsm(cnt)
-      .then((data) => {
-        entitiesInAsm = data;
-        collectInventoryData();
-      })
-      .catch((err) => console.log(err));
-  })
-  .catch((err) => console.log(err));
+// getAsmRessourceCount()
+//   .then((cnt) => {
+//     getFromAsm(cnt)
+//       .then((data) => {
+//         entitiesInAsm = data;
+//         collectInventoryData();
+//       })
+//       .catch((err) => console.log(err));
+//   })
+//   .catch((err) => console.log(err));
 
 async function collectInventoryData() {
   console.log(getCurrentDate() + ` Looking for new data using query <${INV_DB_QUERY_SQL}>`);
