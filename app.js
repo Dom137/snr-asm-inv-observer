@@ -105,7 +105,14 @@ let ASM_EP_RES_FLT = process.env.ASM_EP_RES_FLT;
 if (!ASM_EP_RES_FLT) {
   console.error('Missing env variable ASM_EP_RES_FLT! Using default...');
   ASM_EP_RES_FLT =
-    '?_filter=entityTypes%3DnetworkDevice&_field=name&_include_global_resources=false&_include_count=false&_include_status=false&_include_status_severity=false&_include_metadata=false&_return_composites=true';
+    '?_filter=entityTypes%3DnetworkDevice&_limit=__LIMIT__&_offset=__OFFSET__&_sort=+uniqueId&_field=uniqueId&_include_global_resources=false&_include_count=false&_include_status=false&_include_status_severity=false&_include_metadata=false&_return_composites=true';
+}
+
+let ASM_EP_RES_CNT = process.env.ASM_EP_RES_CNT;
+if (!ASM_EP_RES_CNT) {
+  console.error('Missing env variable ASM_EP_RES_CNT! Using default...');
+  ASM_EP_RES_CNT =
+    '?_filter=entityTypes%3DnetworkDevice&_limit=1&_include_global_resources=false&_include_count=true&_include_status=false&_include_status_severity=false&_include_metadata=false&_return_composites=true';
 }
 
 let DELETE_IF_NOT_PRESENT_IN_INV = process.env.DELETE_IF_NOT_PRESENT_IN_INV == 'true' ? true : false;
@@ -128,6 +135,14 @@ if (!ASM_EP_DEL_WAIT_TIME_MS) {
   ASM_EP_DEL_WAIT_TIME_MS = parseInt(ASM_EP_DEL_WAIT_TIME_MS);
 }
 
+let ASM_BATCH_SIZE = process.env.ASM_BATCH_SIZE;
+if (!ASM_BATCH_SIZE) {
+  console.error('Missing env variable ASM_BATCH_SIZE! Using default...');
+  ASM_BATCH_SIZE = 1000;
+} else {
+  ASM_BATCH_SIZE = parseInt(ASM_BATCH_SIZE);
+}
+
 let ASM_EP_RES_DEL_IMMEDIATE_PARAM = process.env.ASM_EP_RES_DEL_IMMEDIATE_PARAM;
 if (!ASM_EP_RES_DEL_IMMEDIATE_PARAM) {
   console.error('Missing env variable ASM_EP_RES_DEL_IMMEDIATE_PARAM! Using default...');
@@ -141,29 +156,42 @@ if (!ASM_ENTITY_TYPE) {
 }
 
 ASM_EP_RES_FLT = ASM_EP_RES_FLT.replace('__ASM_ENTITY_TYPE__', ASM_ENTITY_TYPE);
+ASM_EP_RES_CNT = ASM_EP_RES_CNT.replace('__ASM_ENTITY_TYPE__', ASM_ENTITY_TYPE);
+
+let ASM_RESPONSE_TIMEOUT = process.env.ASM_RESPONSE_TIMEOUT;
+if (!ASM_RESPONSE_TIMEOUT) {
+  console.error('Missing env variable ASM_RESPONSE_TIMEOUT! Using default...');
+  ASM_RESPONSE_TIMEOUT = 10000;
+} else {
+  ASM_RESPONSE_TIMEOUT = parseInt(ASM_RESPONSE_TIMEOUT);
+}
 
 const token = Buffer.from(`${ASM_USER}:${ASM_PASS}`, 'utf8').toString('base64');
 
 /***************** END CONFIGURATION *******************/
 
 //schedule a periodic run
-cron.schedule(process.env.SCHEDULE || '* * * * *', () => {
-  console.log(getCurrentDate() + '  Looking for new data in inventory database...');
-  console.log(`Collecting current ressources from ASM, using filter on type <${ASM_ENTITY_TYPE}>`);
-  getFromAsm()
-    .then((data) => {
-      entitiesInAsm = data;
-      collectInventoryData();
-    })
-    .catch((err) => console.log(err));
-});
+// cron.schedule(process.env.SCHEDULE || '*/30 * * * *', () => {
+//   console.log(getCurrentDate() + '  Looking for new data in inventory database...');
+//   console.log(getCurrentDate() + ` Collecting current ressources from ASM, using filter on type <${ASM_ENTITY_TYPE}>`);
+//   getFromAsm()
+//     .then((data) => {
+//       entitiesInAsm = data;
+//       collectInventoryData();
+//     })
+//     .catch((err) => console.log(err));
+// });
 
-// getFromAsm()
-//   .then((data) => {
-//     entitiesInAsm = data;
-//     collectInventoryData();
-//   })
-//   .catch((err) => console.log(err));
+getAsmRessourceCount()
+  .then((cnt) => {
+    getFromAsm(cnt)
+      .then((data) => {
+        entitiesInAsm = data;
+        collectInventoryData();
+      })
+      .catch((err) => console.log(err));
+  })
+  .catch((err) => console.log(err));
 
 async function collectInventoryData() {
   console.log(getCurrentDate() + ` Looking for new data using query <${INV_DB_QUERY_SQL}>`);
@@ -235,6 +263,61 @@ async function collectInventoryData() {
   }
 }
 
+async function getAsmRessourceCount() {
+  return new Promise(function (resolve, reject) {
+    console.log(
+      getCurrentDate() +
+        ` Collecting the total amount of ressources from ASM using URL ${
+          ASM_TOPO_URL + ASM_EP_RES + ASM_EP_RES_CNT
+        } ...`
+    );
+    try {
+      axios
+        .get(ASM_TOPO_URL + ASM_EP_RES + ASM_EP_RES_CNT, {
+          headers: {
+            Authorization: `Basic ${token}`,
+            'X-TenantID': ASM_TENANT_ID,
+          },
+        })
+        .then(
+          (response) => {
+            if (response && response.status && response.status < 400) {
+              if (response.data && response.data._count) {
+                const asmResCount = response.data._count;
+                console.log(
+                  getCurrentDate() + ` Done collecting total amount of ressources from ASM. Found ${asmResCount} items.`
+                );
+                resolve(asmResCount);
+              }
+            }
+          },
+          (error) => {
+            console.log(getCurrentDate() + ' Error collecting total amount of ressources from ASM.');
+            console.log(error);
+            if (error && error.response && error.response.data) {
+              const errorData = error.response.data;
+              if (errorData) {
+                console.log(`Reason:`);
+                console.log(errorData);
+                reject(
+                  getCurrentDate() +
+                    'An Error occurred while collection total amount of ressources from ASM. Please see previous error messages.'
+                );
+              }
+            }
+          }
+        );
+    } catch (err) {
+      console.log(getCurrentDate() + ' Caught an exception while collection total amount of ressources from ASM!');
+      console.error(err);
+      reject(
+        getCurrentDate() +
+          ' An Exception occurred while collection total amount of ressources from ASM. Please see previous error messages.'
+      );
+    }
+  });
+}
+
 // gets a list of entities currently present in inventory and deletes the ressources
 // in ASM if they are not present in inventory
 async function syncAsm(invEntries) {
@@ -249,14 +332,6 @@ async function syncAsm(invEntries) {
           if (asmElementInternalId) deleteFromAsm(key, asmElementInternalId);
         }
       }
-      // Object.keys(entitiesInAsm).forEach(function (key) {
-      //   let presentInInventory = invEntries[key];
-      //   if (!presentInInventory) {
-      //     console.log(getCurrentDate() + ' Element <' + key + '> is not present in inventory...');
-      //     let asmElementInternalId = entitiesInAsm[key];
-      //     if (asmElementInternalId) deleteFromAsm(key, asmElementInternalId);
-      //   }
-      // });
       resolve();
     } catch (err) {
       console.log(getCurrentDate() + ' Caught an exception while synchronizing inventory data with ASM!');
@@ -269,71 +344,131 @@ async function syncAsm(invEntries) {
   });
 }
 
-async function getFromAsm() {
-  return new Promise(function (resolve, reject) {
+async function getFromAsm(totalRessourceCnt) {
+  let numApiCalls = Math.ceil(totalRessourceCnt / ASM_BATCH_SIZE);
+  console.log(
+    getCurrentDate() +
+      ` Will be running ${numApiCalls} calls against the ASM API with a batch size of ${ASM_BATCH_SIZE} each.`
+  );
+
+  const staticUrlPart = ASM_TOPO_URL + ASM_EP_RES;
+  let dynamicUrlPart = '';
+  let executedCalls = 0;
+  let asmEntries = {};
+
+  while (executedCalls < numApiCalls) {
+    dynamicUrlPart = ASM_EP_RES_FLT.replace('__LIMIT__', ASM_BATCH_SIZE);
+    dynamicUrlPart = dynamicUrlPart.replace('__OFFSET__', executedCalls * ASM_BATCH_SIZE);
     console.log(
-      getCurrentDate() + ` Collecting current data from ASM using URL ${ASM_TOPO_URL + ASM_EP_RES + ASM_EP_RES_FLT} ...`
+      getCurrentDate() + ` Executing batch #${executedCalls + 1} using URL ${staticUrlPart + dynamicUrlPart}`
     );
-    let asmEntries = {};
+
     try {
-      axios
-        .get(ASM_TOPO_URL + ASM_EP_RES + ASM_EP_RES_FLT, {
-          headers: {
-            Authorization: `Basic ${token}`,
-            'X-TenantID': ASM_TENANT_ID,
-          },
-        })
-        .then(
-          (response) => {
-            if (response && response.status && response.status < 400) {
-              if (response.data && response.data._items) {
-                for (let asmEle of response.data._items) {
-                  asmEntries[asmEle.uniqueId] = asmEle._id;
-                }
-                console.log(
-                  getCurrentDate() +
-                    ` Done collecting current data from ASM. Found ${response.data._items.length} items.`
-                );
-                resolve(asmEntries);
-              }
-            }
-          },
-          (error) => {
-            console.log(getCurrentDate() + ' Error collection data from ASM.');
-            if (error && error.response && error.response.data) {
-              const errorData = error.response.data;
-              if (errorData) {
-                console.log(`Reason:`);
-                console.log(errorData);
-                reject(
-                  getCurrentDate() +
-                    'An Error occurred while collection data from ASM. Please see previous error messages.'
-                );
-              }
-            }
+      let response = await axios.get(staticUrlPart + dynamicUrlPart, {
+        headers: {
+          Authorization: `Basic ${token}`,
+          'X-TenantID': ASM_TENANT_ID,
+        },
+      });
+      if (response && response.status && response.status < 400) {
+        if (response.data && response.data._items) {
+          for (let asmEle of response.data._items) {
+            asmEntries[asmEle.uniqueId] = asmEle._id;
           }
-        );
+          console.log(
+            getCurrentDate() +
+              ` Done collecting batched data from ASM. Found ${response.data._items.length} items in current batch.`
+          );
+        }
+      }
+      executedCalls++;
     } catch (err) {
       console.log(getCurrentDate() + ' Caught an exception while collection data from ASM!');
       console.error(err);
-      reject(
-        getCurrentDate() + ' An Exception occurred while collection data from ASM. Please see previous error messages.'
-      );
     }
-  });
+  }
+
+  console.log(getCurrentDate() + ` Done collecting ALL data from ASM. Found ${Object.keys(asmEntries).length} items.`);
+  return asmEntries;
+
+  // return new Promise(function (resolve, reject) {
+  //   console.log(
+  //     getCurrentDate() + ` Collecting current data from ASM using URL ${ASM_TOPO_URL + ASM_EP_RES + dynamicUrlPart} ...`
+  //   );
+  //   let asmEntries = {};
+  //   try {
+  //     axios
+  //       .get(ASM_TOPO_URL + ASM_EP_RES + dynamicUrlPart, {
+  //         headers: {
+  //           Authorization: `Basic ${token}`,
+  //           'X-TenantID': ASM_TENANT_ID,
+  //         },
+  //       })
+  //       .then(
+  //         (response) => {
+  //           if (response && response.status && response.status < 400) {
+  //             if (response.data && response.data._items) {
+  //               for (let asmEle of response.data._items) {
+  //                 asmEntries[asmEle.uniqueId] = asmEle._id;
+  //               }
+  //               console.log(
+  //                 getCurrentDate() +
+  //                   ` Done collecting current data from ASM. Found ${response.data._items.length} items.`
+  //               );
+  //               resolve(asmEntries);
+  //             }
+  //           }
+  //         },
+  //         (error) => {
+  //           console.log(getCurrentDate() + ' Error collecting data from ASM.');
+  //           console.log(error);
+  //           if (error && error.response && error.response.data) {
+  //             const errorData = error.response.data;
+  //             if (errorData) {
+  //               console.log(`Reason:`);
+  //               console.log(errorData);
+  //               reject(
+  //                 getCurrentDate() +
+  //                   'An Error occurred while collection data from ASM. Please see previous error messages.'
+  //               );
+  //             }
+  //           }
+  //         }
+  //       );
+  //   } catch (err) {
+  //     console.log(getCurrentDate() + ' Caught an exception while collection data from ASM!');
+  //     console.error(err);
+  //     reject(
+  //       getCurrentDate() + ' An Exception occurred while collection data from ASM. Please see previous error messages.'
+  //     );
+  //   }
+  // });
 }
 
-async function sendToAsm(entries) {
+async function sendToAsm(elements) {
   console.log(getCurrentDate() + ' Sending inventory data to ASM...');
-  Object.keys(entries).forEach(function (key) {
-    let ele = entries[key];
-    ele.entityTypes = [ASM_ENTITY_TYPE];
-    ele.uniqueId = ele.ip;
-    ele.tags = ele.services_list.split(';');
+  let count = 1;
+  for (const [key, ele] of Object.entries(elements)) {
+    try {
+      ele.entityTypes = [ASM_ENTITY_TYPE];
+      ele.uniqueId = ele.ip;
+      ele.tags = ele.services_list.split(';');
+      count = count + 1;
+      console.log(getCurrentDate() + ` Working on element ${ele.ip}. This is element #${count}.`);
+      await sendSingleElementToAsm(ele, ASM_EP_RES);
+    } catch (err) {
+      console.log(getCurrentDate() + ' Caught an exception while sending data to ASM!');
+      console.error(err);
+    }
+  }
+}
 
+async function sendSingleElementToAsm(ele, endpoint) {
+  return new Promise(async function (resolve, reject) {
     try {
       axios
-        .post(ASM_BASE_URL + ASM_EP_RES, ele, {
+        .post(ASM_BASE_URL + endpoint, ele, {
+          timeout: ASM_RESPONSE_TIMEOUT,
           headers: {
             Authorization: `Basic ${token}`,
             'X-TenantID': ASM_TENANT_ID,
@@ -342,10 +477,16 @@ async function sendToAsm(entries) {
         })
         .then(
           (response) => {
+            console.log(getCurrentDate() + ' Sent to asm... checking response (errors will be logged).');
             if (response.status && response.status >= 400) {
               console.log(
-                getCurrentDate() + ` Received an error response while create a ressource in ASM. Ressource: ${ele.ip}`
+                getCurrentDate() +
+                  ` Received an error response while creating a ressource in ASM. Ressource: ${ele.name}`
               );
+              reject(`Received an error response while creating a ressource in ASM. Ressource: ${ele.name}`);
+            } else {
+              //console.log(getCurrentDate() + ' Successfully sent to ASM.');
+              resolve();
             }
           },
           (error) => {
@@ -358,11 +499,13 @@ async function sendToAsm(entries) {
                 console.log(errorData);
               }
             }
+            reject('Error sending data to ASM.');
           }
         );
     } catch (err) {
       console.log(getCurrentDate() + ' Caught an exception while sending data to ASM!');
       console.error(err);
+      reject('Caught an exception while sending data to ASM!');
     }
   });
 }
