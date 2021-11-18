@@ -465,6 +465,7 @@ async function sendToAsm(elements) {
       console.error(err);
     }
   }
+  console.log(getCurrentDate() + ' Done Sending inventory data to ASM...');
 }
 
 async function sendSingleElementToAsm(ele, endpoint) {
