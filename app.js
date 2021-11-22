@@ -286,12 +286,18 @@ async function getAsmRessourceCount() {
         .then(
           (response) => {
             if (response && response.status && response.status < 400) {
-              if (response.data && response.data._count) {
+              if (response.data && response.data._count >= 0) {
                 const asmResCount = response.data._count;
                 console.log(
                   getCurrentDate() + ` Done collecting total amount of ressources from ASM. Found ${asmResCount} items.`
                 );
                 resolve(asmResCount);
+              } else {
+                console.log(
+                  getCurrentDate() +
+                    ` Done collecting total amount of ressources from ASM. Found an unexpected count, returning 0.`
+                );
+                resolve(0);
               }
             }
           },
