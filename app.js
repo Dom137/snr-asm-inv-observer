@@ -501,8 +501,8 @@ async function deleteReferenceFromAsm(eleAsmId) {
 }
 
 async function getFromAsm(totalRessourceCnt) {
-  // let numApiCalls = Math.ceil(totalRessourceCnt / ASM_BATCH_SIZE);
-  let numApiCalls = 1;
+  let numApiCalls = Math.ceil(totalRessourceCnt / ASM_BATCH_SIZE);
+  // let numApiCalls = 1;
   console.log(
     getCurrentDate() +
       ` Will be running ${numApiCalls} call(s) against the ASM API with a batch size of ${ASM_BATCH_SIZE} each.`
