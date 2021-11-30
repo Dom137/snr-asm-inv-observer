@@ -4,7 +4,42 @@
 /*
  * --------------------------------------------------------------------------------
  * Description: Main Module for the inventory observer
- *        TODO:
+ *        TODO: Needs the following rules in ASM's merge service:
+ * {
+ * "name": "MatchTokensNetworkInterface",
+ * "ruleType": "matchTokensRule",
+ * "entityTypes": [
+ *   "networkInterface"
+ * ],
+ * "tokens": [
+ *   "physicalportid"
+ * ],
+ * "ruleStatus": "enabled",
+ * "observers": [
+ *   "*"
+ * ],
+ * "providers": [
+ *   "*"
+ * ]
+*}
+* MERGE RULE:
+*{
+*  "name": "MergeTokensNetworkInterface",
+*  "ruleType": "mergeRule",
+*  "entityTypes": [
+*    "networkInterface"
+*  ],
+*  "tokens": [
+*    "physicalportid"
+*  ],
+*  "ruleStatus": "enabled",
+*  "observers": [
+*    "*"
+*  ],
+*  "providers": [
+*    "*"
+*  ]
+*}
  * --------------------------------------------------------------------------------
  */
 
