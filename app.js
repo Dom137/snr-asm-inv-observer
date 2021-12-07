@@ -265,69 +265,69 @@ const token = Buffer.from(`${ASM_USER}:${ASM_PASS}`, 'utf8').toString('base64');
 /***************** END CONFIGURATION *******************/
 
 //schedule a periodic run
-cron.schedule(process.env.SCHEDULE || '0 */2 * * *', () => {
-  console.log(getCurrentDate() + '  Looking for new data in inventory database...');
-  console.log(getCurrentDate() + ` Collecting current ressources from ASM, using filter on type <${ASM_ENTITY_TYPE}>`);
-  getAsmRessourceCount()
-    .then((cnt) => {
-      getFromAsm(cnt)
-        .then((data) => {
-          entitiesInAsm = data;
-          collectInventoryData(INV_DB_QUERY_SQL, INV_DB_USER, INV_DB_PW, INV_DB_CON, INV_DB_QUERY_FIELDS, false).then(
-            (nodes) => {
-              syncAsm(nodes)
-                .then(() => {
-                  collectInventoryData(
-                    IFACE_DB_QUERY_SQL,
-                    IFACE_DB_USER,
-                    IFACE_DB_PW,
-                    IFACE_DB_CON,
-                    IFACE_DB_QUERY_FIELDS,
-                    true
-                  )
-                    .then((interfaces) => {
-                      sendToAsm(nodes, interfaces);
-                    })
-                    .catch((err) => console.log(err));
-                })
-                .catch((err) => console.log(err));
-            }
-          );
-        })
-        .catch((err) => console.log(err));
-    })
-    .catch((err) => console.log(err));
-});
+// cron.schedule(process.env.SCHEDULE || '0 */2 * * *', () => {
+//   console.log(getCurrentDate() + '  Looking for new data in inventory database...');
+//   console.log(getCurrentDate() + ` Collecting current ressources from ASM, using filter on type <${ASM_ENTITY_TYPE}>`);
+//   getAsmRessourceCount()
+//     .then((cnt) => {
+//       getFromAsm(cnt)
+//         .then((data) => {
+//           entitiesInAsm = data;
+//           collectInventoryData(INV_DB_QUERY_SQL, INV_DB_USER, INV_DB_PW, INV_DB_CON, INV_DB_QUERY_FIELDS, false).then(
+//             (nodes) => {
+//               syncAsm(nodes)
+//                 .then(() => {
+//                   collectInventoryData(
+//                     IFACE_DB_QUERY_SQL,
+//                     IFACE_DB_USER,
+//                     IFACE_DB_PW,
+//                     IFACE_DB_CON,
+//                     IFACE_DB_QUERY_FIELDS,
+//                     true
+//                   )
+//                     .then((interfaces) => {
+//                       sendToAsm(nodes, interfaces);
+//                     })
+//                     .catch((err) => console.log(err));
+//                 })
+//                 .catch((err) => console.log(err));
+//             }
+//           );
+//         })
+//         .catch((err) => console.log(err));
+//     })
+//     .catch((err) => console.log(err));
+// });
 
-// getAsmRessourceCount()
-//   .then((cnt) => {
-//     getFromAsm(cnt)
-//       .then((data) => {
-//         entitiesInAsm = data;
-//         collectInventoryData(INV_DB_QUERY_SQL, INV_DB_USER, INV_DB_PW, INV_DB_CON, INV_DB_QUERY_FIELDS, false).then(
-//           (nodes) => {
-//             syncAsm(nodes)
-//               .then(() => {
-//                 collectInventoryData(
-//                   IFACE_DB_QUERY_SQL,
-//                   IFACE_DB_USER,
-//                   IFACE_DB_PW,
-//                   IFACE_DB_CON,
-//                   IFACE_DB_QUERY_FIELDS,
-//                   true
-//                 )
-//                   .then((interfaces) => {
-//                     sendToAsm(nodes, interfaces);
-//                   })
-//                   .catch((err) => console.log(err));
-//               })
-//               .catch((err) => console.log(err));
-//           }
-//         );
-//       })
-//       .catch((err) => console.log(err));
-//   })
-//   .catch((err) => console.log(err));
+getAsmRessourceCount()
+  .then((cnt) => {
+    getFromAsm(cnt)
+      .then((data) => {
+        entitiesInAsm = data;
+        collectInventoryData(INV_DB_QUERY_SQL, INV_DB_USER, INV_DB_PW, INV_DB_CON, INV_DB_QUERY_FIELDS, false).then(
+          (nodes) => {
+            syncAsm(nodes)
+              .then(() => {
+                collectInventoryData(
+                  IFACE_DB_QUERY_SQL,
+                  IFACE_DB_USER,
+                  IFACE_DB_PW,
+                  IFACE_DB_CON,
+                  IFACE_DB_QUERY_FIELDS,
+                  true
+                )
+                  .then((interfaces) => {
+                    sendToAsm(nodes, interfaces);
+                  })
+                  .catch((err) => console.log(err));
+              })
+              .catch((err) => console.log(err));
+          }
+        );
+      })
+      .catch((err) => console.log(err));
+  })
+  .catch((err) => console.log(err));
 
 async function collectInventoryData(query, user, pw, con, fields, interfaces) {
   console.log(getCurrentDate() + ` Looking for new data using query <${query}>`);
@@ -412,6 +412,7 @@ async function getAsmRessourceCount() {
     try {
       axios
         .get(ASM_TOPO_URL + ASM_EP_RES + ASM_EP_RES_CNT, {
+          timeout: ASM_RESPONSE_TIMEOUT,
           headers: {
             Authorization: `Basic ${token}`,
             'X-TenantID': ASM_TENANT_ID,
@@ -570,6 +571,7 @@ async function getFromAsm(totalRessourceCnt) {
 
     try {
       let response = await axios.get(staticUrlPart + dynamicUrlPart, {
+        timeout: ASM_RESPONSE_TIMEOUT,
         headers: {
           Authorization: `Basic ${token}`,
           'X-TenantID': ASM_TENANT_ID,
