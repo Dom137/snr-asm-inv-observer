@@ -20,8 +20,8 @@ COPY ./ .
 
 RUN yum -y install oracle-nodejs-release-el7 oracle-instantclient-release-el7 && \
     yum-config-manager --disable ol7_developer_nodejs12 && \
-    yum-config-manager --enable ol7_developer_nodejs14 && \
-    yum -y install nodejs node-oracledb-node14 && \
+    yum-config-manager --enable ol7_developer_nodejs15 && \
+    yum -y install nodejs node-oracledb-node15 && \
     rm -rf /var/cache/yum/* &&  npm install 
 
 ENV NODE_PATH=/usr/lib/node_modules
