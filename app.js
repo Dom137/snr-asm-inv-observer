@@ -624,6 +624,7 @@ async function sendToAsm(elements, interfaces) {
   console.log(getCurrentDate() + ' Sending interface inventory data to ASM...');
   let interfaceCount = 1;
   let interfaceConnections = {};
+  let hostConnections = {};
   for (const [key, interface] of Object.entries(interfaces)) {
     try {
       interface.entityTypes = [ASM_ENTITY_TYPE_INTERFACE];
@@ -656,6 +657,24 @@ async function sendToAsm(elements, interfaces) {
             ` Interface with PortId ${interface.physicalportid} should be containted by device with NodeId ${interface.if2nodeid}, but this device is not present in ASM.`
         );
       }
+
+      // build up the host 2 host connections
+      const farEndDeviceUniqueId = nodeIdToUniqueId[interface.far_end_nodeid];
+      if (farEndDeviceUniqueId) {
+        if (containingDeviceUniqueId) {
+          hostConnections[containingDeviceUniqueId] = farEndDeviceUniqueId;
+        } else {
+          console.log(
+            getCurrentDate() +
+              ` Unable to find a node with NodeID ${interface.if2nodeid}. Cannot create host 2 host connectivity for devices with NodeIDs ${interface.if2nodeid} and ${interface.far_end_nodeid}.`
+          );
+        }
+      } else {
+        console.log(
+          getCurrentDate() +
+            ` Unable to find a node with NodeID ${interface.far_end_nodeid}. Cannot create host 2 host connectivity for devices with NodeIDs ${interface.if2nodeid} and ${interface.far_end_nodeid}.`
+        );
+      }
     } catch (err) {
       console.log(getCurrentDate() + ' Caught an exception while sending data to ASM!');
       console.error(err);
@@ -686,6 +705,30 @@ async function sendToAsm(elements, interfaces) {
   console.log(
     getCurrentDate() +
       ` Done creating interface connectvity. Created ${interfaceConnectionsCount} connections in total.`
+  );
+
+  // create the connectivity from host to host
+  console.log(getCurrentDate() + ` Creating host 2 host connectvity...`);
+  let hostConnectionsCount = 1;
+  for (const [srcHost, dstHost] of Object.entries(hostConnections)) {
+    try {
+      let hostConnection = {};
+      hostConnection._fromUniqueId = srcHost;
+      hostConnection._toUniqueId = dstHost;
+      hostConnection._edgeType = 'connectedTo';
+      hostConnectionsCount = hostConnectionsCount + 1;
+      console.log(
+        getCurrentDate() +
+          ` Working on host 2 host connectivity from source host with uniqueId ${srcHost} to host ${dstHost}. This is host connectivity #${hostConnectionsCount}.`
+      );
+      await sendSingleElementToAsm(hostConnection, ASM_EP_REF);
+    } catch (err) {
+      console.log(getCurrentDate() + ' Caught an exception while sending data to ASM!');
+      console.error(err);
+    }
+  }
+  console.log(
+    getCurrentDate() + ` Done creating host to host connectvity. Created ${hostConnectionsCount} connections in total.`
   );
 }
 
